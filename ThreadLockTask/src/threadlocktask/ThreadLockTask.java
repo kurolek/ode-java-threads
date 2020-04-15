@@ -9,19 +9,19 @@ package threadlocktask;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
- *
  * @author Юрий
  */
-public class ThreadLockTask
-{
+public class ThreadLockTask {
+
 
     public static void main(String[] args) throws Exception {
         Data d = new Data();
 
         ExecutorService es = Executors.newFixedThreadPool(5);
-        for(int i=0; i<5; i++)
+        for (int i = 0; i < 5; i++)
             es.submit(new WorkWData(d));
 
 
@@ -34,37 +34,71 @@ public class ThreadLockTask
 
 class WorkWData implements Runnable {
     Data obj;
+
+
     WorkWData(Data d) {
-        obj=d;
-     }
+        obj = d;
+    }
+
     public void run() {
         int n;
-        n=obj.read();
-        System.out.println("First read"+" "+Thread.currentThread().getName()+" "+new Integer(n).toString());
+
+
+        n = obj.read();
+        System.out.println("First read" + " " + Thread.currentThread().getName() + " " + new Integer(n).toString());
         obj.write();
-        n=obj.read();
-        System.out.println("Second read"+" "+Thread.currentThread().getName()+" "+new Integer(n).toString());
+        n = obj.read();
+        System.out.println("Second read" + " " + Thread.currentThread().getName() + " " + new Integer(n).toString());
+
     }
 }
 
 class Data {
-    int count=1;
+    final ReentrantReadWriteLock rwl = new ReentrantReadWriteLock();
 
-    int read(){
+    int count = 1;
+
+    int read() {
+        rwl.writeLock().lock();
+        rwl.readLock().lock();
+
         try {
             int n = count;
             TimeUnit.MILLISECONDS.sleep(100);
-            count=n;
-        } catch (InterruptedException ex) { }
+            count = n;
+
+        } catch (InterruptedException ex) {
+
+        } finally {
+            rwl.writeLock().unlock();
+            rwl.readLock().unlock();
+
+        }
+
         return count;
     }
-    void write(){
+
+    void write() {
+
+
+        rwl.writeLock().lock();
+        rwl.readLock().lock();
         try {
-            int n = count;
-            TimeUnit.MILLISECONDS.sleep(100);
-            n++;
-            count=n;
-        } catch (InterruptedException ex) { }
+            if (rwl.isWriteLocked()) {
+                int n = count;
+                TimeUnit.MILLISECONDS.sleep(100);
+                n++;
+                count = n;
+            }
+
+        } catch (InterruptedException ex) {
+
+        } finally {
+            rwl.readLock().unlock();
+            rwl.writeLock().unlock();
+
+        }
+
     }
-    
+
 }
