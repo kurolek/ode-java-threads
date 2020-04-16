@@ -49,7 +49,7 @@ class WorkWData implements Runnable {
         obj.write();
         n = obj.read();
         System.out.println("Second read" + " " + Thread.currentThread().getName() + " " + new Integer(n).toString());
-
+//
     }
 }
 
